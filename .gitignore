@@ -29,6 +29,7 @@ wheels/
 MNIST-data/
 mnist_convnet_model_fast4/
 new-data/
+.DS_Store
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

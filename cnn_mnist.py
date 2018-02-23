@@ -3,6 +3,8 @@ from __future__ import division
 from __future__ import print_function
 
 # Imports
+import os
+import tarfile
 import math
 import cv2
 import numpy as np
@@ -11,13 +13,15 @@ from scipy import ndimage
 
 tf.logging.set_verbosity(tf.logging.INFO)
 
+MY_DATA_FOLDER = 'new-data/my-data'
+
 def cnn_model_fn(features, labels, mode):
     """Model function for CNN."""
 
-    # Input Layer, i.e., the features or pixels of the image, reshaped to be a
-    # 28x28 pixel image with a batch_size of `-1` which indicates the
-    # batch_size should be automatically determined. The number of channels is
-    # 1, i.e., the number of color channels (in this case, img is monochrome)
+    """Input Layer, i.e., the features or pixels of the image, reshaped to be a
+    28x28 pixel image with a batch_size of `-1` which indicates the
+    batch_size should be automatically determined. The number of channels is
+    1, i.e., the number of color channels (in this case, img is monochrome)"""
     input_layer = tf.reshape(
         features["x"],  # data to reshape; our image features
         [-1, 28, 28, 1] # desired shape: [batch_size, width, height, channels]
@@ -70,15 +74,15 @@ def cnn_model_fn(features, labels, mode):
     )
     # Output of dense layer, shape = [batch_size, 1024]
 
-    # Final, logits layer giving us our outputs as probabilities of the original
-    # input image being a digit 0-9. Thus, we have a vector of 10 outputs which
-    # will each represent the probability for the input to be the digit. e.g.,
-    # if the first value, output[0] is high, then we say that the model predicts
-    # a high chance that the input was a handwritten digit '0'. This final layer
-    # is densely connected to the previous layer and provides 10 outputs. These
-    # outputs will later be turned into values from 0 to 1 representing actual
-    # probabilities (see predictions layer and tf.nn.softmax() below)
-    # Final shape: [batch_size, 10]
+    """Final, logits layer giving us our outputs as probabilities of the original
+    input image being a digit 0-9. Thus, we have a vector of 10 outputs which
+    will each represent the probability for the input to be the digit. e.g.,
+    if the first value, output[0] is high, then we say that the model predicts
+    a high chance that the input was a handwritten digit '0'. This final layer
+    is densely connected to the previous layer and provides 10 outputs. These
+    outputs will later be turned into values from 0 to 1 representing actual
+    probabilities (see predictions layer and tf.nn.softmax() below)
+    Final shape: [batch_size, 10]"""
     logits = tf.layers.dense(inputs=dropout, units=10)
 
 
@@ -94,18 +98,18 @@ def cnn_model_fn(features, labels, mode):
         )
     }
 
-    # If we are in prediction mode, return a predictor tensor of the network
-    # and stop; no more building required for prediction
+    """If we are in prediction mode, return a predictor tensor of the network
+    and stop; no more building required for prediction"""
     if mode == tf.estimator.ModeKeys.PREDICT:
         return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions)
 
-    # For TRAIN and EVAL modes, calculate the loss. Cross entropy is a loss
-    # technique commonly used when we have many classes to classify. This is
-    # just another function that calculates the error between our predicted
-    # class and the actual target class. The more wrong we are, the greater the
-    # loss is. e.g., predict 10% chance for a 5 and it is a 5 is bad; predict
-    # 90% chance for a 5 and it is a 5 is better. Cross entropy is only
-    # concerned with the prediction accuracy for the target value.
+    """For TRAIN and EVAL modes, calculate the loss. Cross entropy is a loss
+    technique commonly used when we have many classes to classify. This is
+    just another function that calculates the error between our predicted
+    class and the actual target class. The more wrong we are, the greater the
+    loss is. e.g., predict 10% chance for a 5 and it is a 5 is bad; predict
+    90% chance for a 5 and it is a 5 is better. Cross entropy is only
+    concerned with the prediction accuracy for the target value."""
     loss = tf.losses.sparse_softmax_cross_entropy(
         labels=labels,  # labels are the actual truth values of the data
         logits=logits   # logits are our predicted values of the data
@@ -166,52 +170,77 @@ def main(unused_argv):
         every_n_iter=50  # log every 50 steps of training
     )
 
-    # # Training the model
-    # train_input_fn = tf.estimator.inputs.numpy_input_fn(  # org. our inputs
-    #     x={"x": train_data},  # set the feature data
-    #     y=train_labels,       # set the truth labels
-    #     batch_size=100,       # num samples to give at a time - orig: 100
-    #     num_epochs=None,
-    #     shuffle=True)         # randomize
-    # mnist_classifier.train(
-    #     input_fn=train_input_fn,  # training inputs organized above
-    #     steps=500,              # orig: 20000 training steps
-    #     hooks=[logging_hook])     # connect to logging
+    # Training the model
+    train_input_fn = tf.estimator.inputs.numpy_input_fn(  # org. our inputs
+        x={"x": train_data},  # set the feature data
+        y=train_labels,       # set the truth labels
+        batch_size=100,       # num samples to give at a time - orig: 100
+        num_epochs=None,
+        shuffle=True)         # randomize
+    mnist_classifier.train(
+        input_fn=train_input_fn,  # training inputs organized above
+        steps=500,              # orig: 20000 training steps
+        hooks=[logging_hook])     # connect to logging
 
-    # # Evaluate the model and print results!
-    # # Build the evaluate_input_function for giving the classifier our data
-    # eval_input_fn = tf.estimator.inputs.numpy_input_fn(
-    #     x={"x": eval_data},
-    #     y=eval_labels,
-    #     num_epochs=1,
-    #     shuffle=False)
-    # eval_results = mnist_classifier.evaluate(
-    #     input_fn=eval_input_fn)  # evaluate based on the data!
+    # Evaluate the model and print results!
+    # Build the evaluate_input_function for giving the classifier our data
+    eval_input_fn = tf.estimator.inputs.numpy_input_fn(
+        x={"x": eval_data},
+        y=eval_labels,
+        num_epochs=1,
+        shuffle=False)
+    eval_results = mnist_classifier.evaluate(
+        input_fn=eval_input_fn)  # evaluate based on the data!
 
-    # print(eval_results)
+    print(eval_results)
 
-    # Evaluate on our own handwritten digits!?
-    (images, labels) = preprocess_my_handwritten()
+    # Evaluate on our own handwritten digits!? Uncomment below ~
+    # evaluate_my_handwritten(mnist_classifier, logging_hook, MY_DATA_FOLDER)
+
+def evaluate_my_handwritten(mnist_classifier, logging_hook, data_folder):
+    if not os.path.exists('new-data'):
+        tar = tarfile.open('new-data.tar')
+        tar.extractall()
+        tar.close()
+
+    images, labels = preprocess_my_handwritten(data_folder)
 
     eval_input_fn = tf.estimator.inputs.numpy_input_fn(
         x={"x": images},
         y=labels,
-        shuffle=False)
+        shuffle=False
+    )
+
+    # evaluate based on the data!
     eval_results = mnist_classifier.evaluate(
         input_fn=eval_input_fn,
-        hooks=[logging_hook])  # evaluate based on the data!
+        hooks=[logging_hook]
+    )
 
     print(eval_results)  # Print our results and accuracy!
 
-def preprocess_my_handwritten():
-    # based on: https://medium.com/@o.kroeger/tensorflow-mnist-and-your-own-handwritten-digits-4d1cd32bbab4
-    images = np.zeros((30, 784), dtype=np.float32)
-    labels = np.zeros((30, 1), dtype=np.int32)
+def preprocess_my_handwritten(data_folder):
+    # based on https://medium.com/@o.kroeger/tensorflow-mnist-and-your-own-handwritten-digits-4d1cd32bbab4
 
-    # Process each digit 0-9 one at a time
-    for i in xrange(30):
+    # the folders to contain our data
+    raw_filepath = os.path.join(data_folder, 'raw')
+    proc_filepath = os.path.join(data_folder, 'proc')
+
+    num_images = len(os.listdir(raw_filepath))
+
+    # np.arrays that we will fill with out image/label data
+    images = np.zeros((num_images, 784), dtype=np.float32)
+    labels = np.zeros((num_images, 1), dtype=np.int32)
+
+    # process each digit 0-9 one at a time
+    i = 0
+    for image_name in os.listdir(raw_filepath):
+        label = image_name[0]
+        if not label.isdigit():
+            continue
+
         # load the image as a grayscale
-        gray = cv2.imread("jumpstreet-data/raw/" + str(i) + ".png",
+        gray = cv2.imread(os.path.join(raw_filepath, image_name),
                           cv2.IMREAD_GRAYSCALE)
 
         # resize to 28x28 and invert to white writing on black background
@@ -222,7 +251,6 @@ def preprocess_my_handwritten():
                                        cv2.THRESH_BINARY | cv2.THRESH_OTSU)
 
         # Begin reformatting to center a 20x20 digit into a 28x28 box
-        # remove black edges
         while np.sum(gray[0]) == 0:
             gray = gray[1:]
         while np.sum(gray[:,0]) == 0:
@@ -274,17 +302,18 @@ def preprocess_my_handwritten():
         gray = shifted
 
         # save processed images
-        cv2.imwrite("jumpstreet-data/proc3/image_" + str(i) + ".png", gray)
+        if not os.path.exists(proc_filepath):
+            os.mkdir(proc_filepath)
+        cv2.imwrite(os.path.join(proc_filepath, image_name), gray)
 
         # scale 0 to 1
         flat = gray.flatten() / 255.0
 
         images[i] = flat
-        labels[i] = 4
+        labels[i] = label
+        i += 1
 
-    return (images, labels)
-
+    return images, labels
 
 if __name__ == "__main__":
   tf.app.run()
-
