@@ -28,42 +28,32 @@ def cnn_model_fn(features, labels, mode):
     )
 
     # First Convolutional Layer; output shape = [batch_size, 28, 28, 32]
-    conv1 = tf.layers.conv2d(
-        inputs=input_layer,    # inputs from the previous layer of features
-        filters=32,            # a total of 32 filters, creating 32 outputs
-        kernel_size=[5, 5],    # 5x5 convolution tiles
-        padding="same",        # output padded to have same dimensions as input
-        activation=tf.nn.relu  # ReLU activation applied to the output
-    )
+    # We will use 32 filters, 5x5 kernel size, 'same' padding, and relu
+    ############################## YOUR CODE ##############################
+
 
     # First Pooling Layer; output shape = [batch_size, 14, 14, 32]
-    pool1 = tf.layers.max_pooling2d(
-        inputs=conv1,          # inputs from the previous convolutional layer
-        pool_size=[2, 2],      # max_pool each 2x2 square into 1 value
-        strides=2              # stride 2 squares to the right after each pool
-    )
+    # 2x2 pool size with strides of 2
+    ############################## YOUR CODE ##############################
+
 
     # Second Conv & Pooling Layers; output shape = [batch_size, 7, 7, 64]
-    conv2 = tf.layers.conv2d(
-        inputs=pool1,
-        filters=64,            # now using 64 filters, creating 64 outputs
-        kernel_size=[5, 5],
-        padding="same",
-        activation=tf.nn.relu
-    )
+    # 64 filters this time!
+    ############################## YOUR CODE ##############################
+
 
     # max_pooling reduces our `image` width and height by 50%
-    pool2 = tf.layers.max_pooling2d(inputs=conv2, pool_size=[2, 2], strides=2)
+    # 2x2 pool with strides of 2
+    ############################## YOUR CODE ##############################
+
 
     # Flatten pool2 for input to dense layer; out_shape=[batch_size, 3136]
     pool2_flat = tf.reshape(pool2, [-1, 7 * 7 * 64])  # reshape to be flat (2D)
 
     # Performs the actual classification of the abstracted features from conv1/2
-    dense = tf.layers.dense(
-        inputs=pool2_flat,     # inputs from flattened pool layer
-        units=512,            # 1,024 neurons in the layer (1024 outputs)
-        activation=tf.nn.relu  # ReLU activation function
-    )
+    # 512 nodes for this dense layer; ReLU activation
+    ############################## YOUR CODE ##############################
+
 
     # Dropout creates a chance that input is ignored during training. This will
     # decrease the chances of over-fitting the training data
@@ -110,16 +100,17 @@ def cnn_model_fn(features, labels, mode):
     loss is. e.g., predict 10% chance for a 5 and it is a 5 is bad; predict
     90% chance for a 5 and it is a 5 is better. Cross entropy is only
     concerned with the prediction accuracy for the target value."""
-    loss = tf.losses.sparse_softmax_cross_entropy(
-        labels=labels,  # labels are the actual truth values of the data
-        logits=logits   # logits are our predicted values of the data
-    )
+    # loss function here -- sparse-cross-entropy!
+    ############################## YOUR CODE ##############################
+
 
     # Configure the training operation if TRAIN mode
     if mode == tf.estimator.ModeKeys.TRAIN:
         # We want a low learning rate so that we can slowly but surely reach
         # the optimum. Higher rates may learn faster but may overshoot the opt
-        optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.06)
+        # Let's use a Gradient Descent Optimizer -- learning_rate of 0.06
+        ############################## YOUR CODE ##############################
+
 
         # Use our Grad Descent optimizer to minimize the loss we calculated!
         train_op = optimizer.minimize(
@@ -158,10 +149,8 @@ def main(unused_argv):
     eval_labels = np.asarray(mnist.test.labels, dtype=np.int32)
 
     # Create the actual Estimator to run our model
-    mnist_classifier = tf.estimator.Estimator(
-        model_fn=cnn_model_fn,  # the CNN model we created earlier!
-        model_dir="./mnist_convnet_model_fast4"  # save model data here
-    )
+    ############################## YOUR CODE ##############################
+
 
     # Setup logging here
     tensors_to_log = {"probabilities": "softmax_tensor"} # prob from earlier
@@ -177,10 +166,10 @@ def main(unused_argv):
         batch_size=100,       # num samples to give at a time - orig: 100
         num_epochs=None,
         shuffle=True)         # randomize
-    mnist_classifier.train(
-        input_fn=train_input_fn,  # training inputs organized above
-        steps=500,              # orig: 20000 training steps
-        hooks=[logging_hook])     # connect to logging
+    
+    # Add the code to train the mnist_classifier over 500 steps!
+    ############################## YOUR CODE ##############################
+
 
     # Evaluate the model and print results!
     # Build the evaluate_input_function for giving the classifier our data
