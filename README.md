@@ -64,16 +64,27 @@ Now, you should have all of the necessary dependencies installed! You can do a q
 If you get no errors here, your setup should be ready to go (note: press Ctrl-D to end the interpreter)!
 
 ## Writing the code
+In the `master` branch, some lines of code have been omitted for you to fill out. These lines are indicated with the `### YOUR CODE ###` tags. These missing lines are the most essential components of building and running the tensorflow code. The code itself is commented throughout to help explain different lines of code, but I will explain a few notable ones here.
+```python
+def cnn_model_fn(features, labels, mode):
+    ...
+```
 
+The above function is where the actual neural network is created. Here we will build our network to have two convolutional layers, each followed by a max-pooling layer. After the convolutional layers, we will flatten our data and run it through two fully-connected layers to perform the final classification. Our model inputs will be the raw pixels of an image of a digit (0-9) and our output will be a vector of probabilities designating the probability that the input was a 0, a 1, a 2, etc. Finally, we take the highest probability to be our prediction.
+
+If we are currently training our model, we will also want to define the loss and function we want to use to optimize loss. Then, `tensorflow` will feed our training data through the model and try to minimize loss (a way to determine error or goodness-of-fit). As long as we link together the model correctly and define the inputs, loss optimization, and outputs, `tensorflow` will run our model and train it for us. This function will return a `tf.estimator.EstimatorSpec` object which contains the information to run the model.
+
+In the `main()` method, we really leverage the utility of `tensorflow` to do a lot of the low-level work for us. First, we download the dataset. Then, we create the model according to the `cnn_model_fn()` function. Then, we specify how the inputs should be fed into the model and tell `tensorflow` to train our model. Finally, we can specify how the test data will be fed into the model and tell `tensorflow` to evaluate the test accuracy of our model.
+
+The function `evaluate_my_handwritten()` can be used to have the model actually predict your own handwritten digits. To use this function, you just need to take a picture of your handwritten digit, crop it so that the only marks seen in the image are part of your actual digit (no stray marks), then place the raw images into a folder named `new-data/data/raw`. Then, set the value of `MY_DATA_FOLDER = 'new-data/data'` so that the program knows where to find your digits. Finally, make sure that each image filename begins with the digit that is shown in the image (e.g., an image of the digit `8` could be called `8_digit.jpg`). An example of handwritten digits is provided in `new-data.tar` which will be automatically extracted for you if you do not create your own directory called `new-data/`.
 
 ## Useful Links
 * [Andrew Ng's Coursera](https://www.coursera.org/learn/machine-learning)
 * [Intuitive explanation of convolutional neural networks](https://ujjwalkarn.me/2016/08/11/intuitive-explanation-convnets/)
 * [Chapter on ConvNets (part of an online TensorFlow tutorial)](https://www.safaribooksonline.com/library/view/learning-tensorflow/9781491978504/ch04.html)
-* Datasets to play with:
+* Datasets to play with at [this link](https://deeplearning4j.org/opendata):
     * Street View House Numbers (SVHN)
     * ImageNet
     * Google Open Images
-    * More at: <https://deeplearning4j.org/opendata>
 * [Kaggle has a lot of machine learning datasets and competitions](https://www.kaggle.com)
 * [ModelZoo is a curated list of many different machine learning models](https://github.com/BVLC/caffe/wiki/Model-Zoo)
